@@ -1,4 +1,4 @@
-
+﻿
 #-*-coding:utf-8-*-
 '''
 '''
@@ -10,11 +10,11 @@ class Login:
         self.passwd = passwd
     def login(self):
         cj = http.cookiejar.CookieJar()
-        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
-        opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36')]
-        resp=opener.open('https://www.baidu.com/')
+        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+        self.opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36')]
+        resp=self.opener.open('https://www.baidu.com/')
         getapiUrl = "https://passport.baidu.com/v2/api/?getapi&class=login&tpl=mn&tangram=true"
-        resp2=opener.open(getapiUrl)
+        resp2=self.opener.open(getapiUrl)
         getapiRespHtml = resp2.read().decode("utf-8")
         foundTokenVal = re.search("bdPass\.api\.params\.login_token='(?P<tokenVal>\w+)';", getapiRespHtml)
         if foundTokenVal :
@@ -32,21 +32,21 @@ class Login:
                         'loginType': "1",
                         'tpl': "mn",
 ##                        'callback': "parent.bd__pcbs__y1km65",
-                        'username': self.name,   #用户名
-                        'password': self.passwd,   #密码
+                        'username': self.name,   #鐢ㄦ埛鍚�
+                        'password': self.passwd,   #瀵嗙爜
                         'mem_pass':"on",
                         "apiver":"v3",
                         "logintype":"basicLogin"
                         }
             postData = urllib.parse.urlencode(postDict);
             postData = postData.encode('utf-8')
-            resp3=opener.open(baiduMainLoginUrl,data=postData)
+            resp3=self.opener.open(baiduMainLoginUrl,data=postData)
 ##            for c in cj:
 ##                print(c.name,"="*6,c.value)
-            print(resp3.read().decode('utf-8'))
-            res = opener.open('http://tieba.baidu.com/f/user/json_userinfo')
+#             print(resp3.read().decode('utf-8'))
+            res = self.opener.open('http://tieba.baidu.com/f/user/json_userinfo')
             ret = res.read().decode('gbk')
-            print(ret[0])
+#             print(ret[0])
             if ret[0] != '{':
                 print("login failed")
                 return 
@@ -54,12 +54,16 @@ class Login:
             if int(val) == 0:
                 print("login success")
             else:
-                print("login failed")
-            
-
+                print("login failed" )
+                
+    def getMember(self, tieba):
+        url = 'http://tieba.baidu.com/bawu2/platform/listMemberInfo?word=' + urllib.parse.quote(tieba);
+        resp = self.opener.open(url)
+        print(resp.read().decode('gbk'));
     
 if __name__=="__main__":
-    print("="*10,"开始")
-    bd=Login('迷失的狼风', '89021111')
+    print("="*10,"***")
+    bd=Login('demo', '123456')
     bd.login()
+    bd.getMember('中南大学')
  
