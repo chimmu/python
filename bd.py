@@ -33,7 +33,7 @@ class Login:
     def login_next(self):
         ret = False
         while self.user_idx < len(self.users):
-            self.total = 0
+#             self.total = 0
             self.name = self.users[self.user_idx]["name"]
             self.passwd = self.users[self.user_idx]["passwd"]
             print("move to next user: {0}".format(self.name))
@@ -51,9 +51,9 @@ class Login:
         self.cookie = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.cookie))
         self.opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36')]
-        resp=self.opener.open('https://www.baidu.com/')
+        resp=self.opener.open('https://www.baidu.com/', timeout=self.timeout)
         getapiUrl = "https://passport.baidu.com/v2/api/?getapi&class=login&tpl=mn&tangram=true"
-        resp2=self.opener.open(getapiUrl)
+        resp2=self.opener.open(getapiUrl, timeout=self.timeout)
         getapiRespHtml = resp2.read().decode("utf-8")
         foundTokenVal = re.search("bdPass\.api\.params\.login_token='(?P<tokenVal>\w+)';", getapiRespHtml)
         if foundTokenVal :
@@ -79,11 +79,11 @@ class Login:
                         }
             postData = urllib.parse.urlencode(postDict);
             postData = postData.encode('utf-8')
-            resp3=self.opener.open(baiduMainLoginUrl,data=postData)
+            resp3=self.opener.open(baiduMainLoginUrl,data=postData, timeout=self.timeout)
 ##            for c in cj:
 ##                print(c.name,"="*6,c.value)
 #             print(resp3.read().decode('utf-8'))
-            res = self.opener.open('http://tieba.baidu.com/f/user/json_userinfo')
+            res = self.opener.open('http://tieba.baidu.com/f/user/json_userinfo', timeout=self.timeout)
             ret = res.read().decode('gbk')
 #             print(ret[0])
             if ret[0] != '{':
@@ -100,7 +100,7 @@ class Login:
     def get_follower_number(self):
         url = 'http://tieba.baidu.com/home/main'
         url = 'http://tieba.baidu.com'
-        content = self.opener.open(url).read().decode('gbk')
+        content = self.opener.open(url, timeout=self.timeout).read().decode('gbk')
 #         content = open('test.html', 'r').read()
 #         print(content)
         idre = re.compile(r'"portrait": ("[\w\d]+")')
@@ -113,12 +113,12 @@ class Login:
         params = { 'id': bdid,
                   'fr': 'userbar'
                   }
-        main_page = self.opener.open(url, data = urllib.parse.urlencode(params).encode('gbk'))
+        main_page = self.opener.open(url, data = urllib.parse.urlencode(params).encode('gbk'), timeout=self.timeout)
         #@todo    
     def get_concern_number(self):
         url = 'http://tieba.baidu.com/home/main?un=' + urllib.parse.quote(self.name, encoding='gbk') + '&fr=ibaidu&ie=gbk'
         print(url)
-        ctx = self.opener.open(url).read().decode('gbk')
+        ctx = self.opener.open(url, timeout=self.timeout).read().decode('gbk')
         rconcern = re.compile(r'<a href="[\S]+" target="_blank">(\d)</a>')
         cerns = re.findall(rconcern, ctx)
         if cerns == None:
@@ -129,7 +129,7 @@ class Login:
             return None
         url = 'http://tieba.baidu.com/bawu2/platform/listMemberInfo?word=' + urllib.parse.quote(tieba, encoding='gbk') + '&pn=' + str(page);
         print(url)
-        resp = self.opener.open(url)
+        resp = self.opener.open(url, timeout=self.timeout)
         dec_resp = resp.read().decode('gbk')
         return dec_resp
     
@@ -150,7 +150,7 @@ class Login:
         return addrs
     def get_tbs(self, url): 
         try:
-            person_context = self.opener.open(url)
+            person_context = self.opener.open(url, timeout=self.timeout)
             tbs_pat = re.compile(r'PageData.tbs = "(\w+)"')
             tbs = re.findall(tbs_pat, person_context.read().decode('gbk'))
             if tbs:
