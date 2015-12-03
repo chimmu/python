@@ -1,5 +1,13 @@
+{"users":
+[{
+"name": "demo1",
+"passwd": "hehe"
+},
 {
-"name": "demo",
-"passwd": "1234",
+"name":"demo2",
+"passwd":"haha"
+}
+],
+"limit": 1000,
 "timeout": 10
 }

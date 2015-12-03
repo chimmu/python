@@ -5,12 +5,48 @@
 import urllib.request,http.cookiejar,re
 import json
 from time import sleep
+
 class Login:
-    def __init__(self, name, passwd, timeout):
-        self.name = name
-        self.passwd = passwd
-        self.total = 0
+    def __init__(self, limit, timeout, users):
+        self.limit = limit
         self.timeout = timeout
+        self.user_idx = 0
+        self.users = users
+        self.total = 0
+        self.concern = 0
+        flag = False
+        for user in users:
+            self.name = user["name"]
+            self.passwd = user["passwd"]
+            if self.login() == False:
+                print("login {0} failed".format(user["name"]))
+            else:
+                flag = True
+                self.concern = self.get_concern_number()
+                self.user_idx += 1
+                break
+            self.user_idx += 1
+        if flag == False:
+            print("init error, exit")
+            exit(2)
+        
+    def login_next(self):
+        ret = False
+        while self.user_idx < len(self.users):
+            self.total = 0
+            self.name = self.users[self.user_idx]["name"]
+            self.passwd = self.users[self.user_idx]["passwd"]
+            print("move to next user: {0}".format(self.name))
+            self.user_idx += 1
+            if self.login() == True:
+                print("login {0} success".format(self.name))
+                self.concern = self.get_concern_number() #已关注多少人
+                ret = True
+                break
+        if self.user_idx == len(self.users):
+            print("meet the end")   
+        return ret
+
     def login(self):
         self.cookie = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.cookie))
@@ -62,7 +98,7 @@ class Login:
                 return False
             
     def get_follower_number(self):
-#         url = 'http://tieba.baidu.com/home/main'
+        url = 'http://tieba.baidu.com/home/main'
         url = 'http://tieba.baidu.com'
         content = self.opener.open(url).read().decode('gbk')
 #         content = open('test.html', 'r').read()
@@ -79,11 +115,20 @@ class Login:
                   }
         main_page = self.opener.open(url, data = urllib.parse.urlencode(params).encode('gbk'))
         #@todo    
+    def get_concern_number(self):
+        url = 'http://tieba.baidu.com/home/main?un=' + urllib.parse.quote(self.name, encoding='gbk') + '&fr=ibaidu&ie=gbk'
+        print(url)
+        ctx = self.opener.open(url).read().decode('gbk')
+        rconcern = re.compile(r'<a href="[\S]+" target="_blank">(\d)</a>')
+        cerns = re.findall(rconcern, ctx)
+        if cerns == None:
+            return 0
+        return int(cerns[0])
     def get_page(self, tieba, page):
         if self.total and page > self.total:
             return None
-        url = 'http://tieba.baidu.com/bawu2/platform/listMemberInfo?word=' + urllib.parse.quote(tieba) + '&pn=' + str(page);
-#         print(url)
+        url = 'http://tieba.baidu.com/bawu2/platform/listMemberInfo?word=' + urllib.parse.quote(tieba, encoding='gbk') + '&pn=' + str(page);
+        print(url)
         resp = self.opener.open(url)
         dec_resp = resp.read().decode('gbk')
         return dec_resp
@@ -122,37 +167,21 @@ class Login:
             addrs = self.get_addrs(tieba, page)
             if addrs == None:
                 break
-#             for addr in addrs:
-#                 print(addr)
-#                 idx = addr.index('=') + 1;
-#                 person = addr[idx:]
-#                 tbs = self.get_tbs(addr)
-#                 if tbs == None:
-#                     continue
-#                 follow_post = {
-#                                "ie":"utf-8",
-#                                'un': urllib.parse.unquote(person, 'gbk'),
-#                                'tbs': tbs
-#                                }
-#                 context = self.opener.open('http://tieba.baidu.com/home/post/follow', data=urllib.parse.urlencode(follow_post).encode('gbk'))
-#                 ret = context.read().decode('gbk')
-#                 print(ret)
-#                 if ret[0] != '{':
-#                     print("follow {0} failed!!!!!!!!".format(person))
-#                     continue
-#                 val = ret[ret.index(':') + 1: ret.index(',')]
-#                 if int(val) == 0:
-#                     print("follow success**********")
-#                     continue
-#                 else:
-#                     print("FOLLOW {0} failed!!!!!!!!!!!!!".format(person))
-#                     continue
-#                 sleep(self.timeout)
             self.follow(addrs)
             page += 1
         print("done33333333333333333333333")
+        
+    def check(self):
+        ret = True
+        if self.concern >= self.limit:
+            ret = self.login_next()
+        return ret
+    
     def follow(self, addrs):
             for addr in addrs:
+                if self.check() == False:
+                    print("check error, exit..........")
+                    exit(1)
                 idx = addr.index('=') + 1;
                 person = addr[idx:]
                 tbs = self.get_tbs(addr)
@@ -163,18 +192,23 @@ class Login:
                                'un': urllib.parse.unquote(person, 'gbk'),
                                'tbs': tbs
                                }
-                context = self.opener.open('http://tieba.baidu.com/home/post/follow', data=urllib.parse.urlencode(follow_post).encode('gbk'))
-                ret = context.read().decode('gbk')
-                print(ret)
+                try:
+                    context = self.opener.open('http://tieba.baidu.com/home/post/follow', data=urllib.parse.urlencode(follow_post).encode('gbk'), timeout=self.timeout)
+                    ret = context.read().decode('gbk')
+                except Exception as e:
+                    print(e)
+                    continue
+#                 print(ret)
                 if ret[0] != '{':
-                    print("follow {0} failed!!!!!!!!".format(person))
+                    print("follow {0} failed!!!!!!!!".format(urllib.parse.unquote(person, 'gbk')))
                     continue
                 val = ret[ret.index(':') + 1: ret.index(',')]
                 if int(val) == 0:
-                    print("follow success**********")
+                    self.concern += 1
+                    print("follow {0} success**********".format(urllib.parse.unquote(person, 'gbk')))
                     continue
                 else:
-                    print("FOLLOW {0} failed!!!!!!!!!!!!!".format(person))
+                    print("FOLLOW {0} failed!!!!!!!!!!!!!".format(urllib.parse.unquote(person, 'gbk')))
                     continue
                 sleep(self.timeout)
 def get_conf(file):
@@ -188,15 +222,18 @@ def get_conf(file):
 
 if __name__ == "__main__":
     conf = get_conf('user.txt')
-#     tieba_list = get_conf('tieba.txt')
-    followers = get_conf('followers.txt')
-    bd = Login(conf['name'], conf['passwd'], int(conf['timeout']))
-    if bd.login() == False:
-        exit(1)
-# #     for tieba in tieba_list:
-# #         bd.get_members(tieba)
+    tieba_list = get_conf('tieba.txt')
+    bd = Login(int(conf["limit"]), int(conf["timeout"]), conf["users"])
+#     followers = get_conf('followers.txt')
+#     bd = Login(conf['name'], conf['passwd'], int(conf['timeout']))
+#     if bd.login() == False:
+#         exit(1)
+#     bd.get_concern_number()
+    for tieba in tieba_list:
+#         print(urllib.parse.quote(tieba))
+        bd.get_members(tieba)
 #     bd.get_follower_number()
-    bd.follow(followers)
+#     bd.follow(followers)
     
     
  
