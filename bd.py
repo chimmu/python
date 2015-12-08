@@ -15,6 +15,7 @@ class Login:
         self.total = 0
         self.concern = 0
         flag = False
+        self.log = open("log.txt", "w")
         for user in users:
             self.name = user["name"]
             self.passwd = user["passwd"]
@@ -27,7 +28,7 @@ class Login:
                 break
             self.user_idx += 1
         if flag == False:
-            print("init error, exit")
+            self.log.write("init error, exit")
             exit(2)
         
     def login_next(self):
@@ -118,24 +119,34 @@ class Login:
     def get_concern_number(self):
         url = 'http://tieba.baidu.com/home/main?un=' + urllib.parse.quote(self.name, encoding='gbk') + '&fr=ibaidu&ie=gbk'
         print(url)
-        ctx = self.opener.open(url, timeout=self.timeout).read().decode('gbk')
+        try:
+            ctx = self.opener.open(url, timeout=self.timeout).read().decode('gbk')
+        except Exception as e:
+            print(e)
+            return 0
         rconcern = re.compile(r'<a href="[\S]+" target="_blank">(\d)</a>')
         cerns = re.findall(rconcern, ctx)
-        if cerns == None:
+        if cerns == None or len(cerns) == 0:
             return 0
         return int(cerns[0])
     def get_page(self, tieba, page):
         if self.total and page > self.total:
+            print("total page:{0}, current: {1}".format(self.total, page))
             return None
         url = 'http://tieba.baidu.com/bawu2/platform/listMemberInfo?word=' + urllib.parse.quote(tieba, encoding='gbk') + '&pn=' + str(page);
         print(url)
-        resp = self.opener.open(url, timeout=self.timeout)
-        dec_resp = resp.read().decode('gbk')
-        return dec_resp
+        try:
+            resp = self.opener.open(url, timeout=self.timeout)
+            dec_resp = resp.read().decode('gbk')
+            return dec_resp
+        except Exception as e:
+            print(e)
+            return []
+        
     
     def get_addrs(self, tieba, page):
         resp = self.get_page(tieba, page);
-        if resp == None:
+        if resp == None or len(resp) == 0:
             return resp
         pat = re.compile(r'<a href="([\w\S]*)" class="user_name"')
         res = re.findall(pat, resp)
@@ -145,7 +156,11 @@ class Login:
             addrs.append(tieba_home + val) 
         if page == 1:
             pt = re.compile(r'<span class="tbui_total_page">共([\d]+)页')
+            
             self.total = int(re.findall(pt, resp)[0])
+            if self.total > 458:
+                self.total = 458
+            print("total: {0}....".format(self.total))
 
         return addrs
     def get_tbs(self, url): 
@@ -167,6 +182,9 @@ class Login:
             addrs = self.get_addrs(tieba, page)
             if addrs == None:
                 break
+            elif len(addrs) == 0:
+                page += 1
+                continue
             self.follow(addrs)
             page += 1
         print("done33333333333333333333333")
@@ -180,7 +198,7 @@ class Login:
     def follow(self, addrs):
             for addr in addrs:
                 if self.check() == False:
-                    print("check error, exit..........")
+                    self.log.write("check error, exit..........")
                     exit(1)
                 idx = addr.index('=') + 1;
                 person = addr[idx:]
@@ -224,16 +242,13 @@ if __name__ == "__main__":
     conf = get_conf('user.txt')
     tieba_list = get_conf('tieba.txt')
     bd = Login(int(conf["limit"]), int(conf["timeout"]), conf["users"])
-#     followers = get_conf('followers.txt')
-#     bd = Login(conf['name'], conf['passwd'], int(conf['timeout']))
-#     if bd.login() == False:
-#         exit(1)
-#     bd.get_concern_number()
     for tieba in tieba_list:
-#         print(urllib.parse.quote(tieba))
-        bd.get_members(tieba)
-#     bd.get_follower_number()
-#     bd.follow(followers)
+        try:
+            bd.get_members(tieba)
+        except Exception as e:
+            print(e)
+            bd.log.write("exception 244")
+    bd.log.close()
     
     
  
