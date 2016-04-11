@@ -1,11 +1,13 @@
 {"users":
 [{
 "name": "demo1",
-"passwd": "hehe"
+"passwd": "hehe",
+"bduss":"fasfsakf"
 },
 {
 "name":"demo2",
-"passwd":"haha"
+"passwd":"haha",
+"bduss":"fasfsakf"
 }
 ],
 "limit": 1000,
