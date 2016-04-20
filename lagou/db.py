@@ -57,7 +57,7 @@ class MysqlDb:
         return cursor  
             
 if __name__ == '__main__':
-    db = MysqlDb('root', 'zcm890211', 'lagou', '127.0.0.1', 3306)
+    db = MysqlDb('root', '123456', 'lagou', '127.0.0.1', 3306)
     db.set_table('job')
     res = db.query('*', {'job_id': 1})
     for item in res:
