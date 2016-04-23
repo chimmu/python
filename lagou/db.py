@@ -54,11 +54,28 @@ class MysqlDb:
         print(sql)
         cursor = self._conn.cursor()
         cursor.execute(sql)
-        return cursor  
-            
+        return cursor
+    def query_group_count(self, field, condDict=None):
+        sql = 'select ' + field + ', count(*) as cnt from '
+        sql += self._table
+        if condDict != None:
+            sql += ' where '
+            for key in condDict:
+                if isinstance(condDict[key], str):
+                    sql += key + ' = "' + str(condDict[key]) + '" and '
+                else:
+                    sql += key + ' = ' + str(condDict[key]) + ' and '
+            sql += ' 1 '
+        sql += ' group by ' + field + ' order by cnt desc'
+        print(sql)
+        cursor = self._conn.cursor()
+        cursor.execute(sql)
+        res = []
+        for c in cursor:
+            res.append(c)
+        return res
 if __name__ == '__main__':
     db = MysqlDb('root', '123456', 'lagou', '127.0.0.1', 3306)
     db.set_table('job')
-    res = db.query('*', {'job_id': 1})
-    for item in res:
-        print(item)
+    res = db.query_group_count('city', condDict={'job_type':0})
+    print(res)
