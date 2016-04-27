@@ -5,7 +5,7 @@ import os, os.path, os.path
 colors = ['red', 'orange', 'green', 'yellow', 'blue', 'purple', 'gray', 'gold', 'yellowgreen', 'lightskyblue', 'lightcoral', 'red', 'orange', 'green', 'yellow', 'blue', 'purple', 'gray', 'gold', 'yellowgreen', 'lightskyblue', 'lightcoral']
 prefix = './images/'
 def draw_circle(labels, percents, title):
-    plt.figure(figsize=(20, 25))
+    plt.figure(figsize=(8.0, 6.0))
 #     labels =['John', 'Jim', 'Jerry', 'Jack']
 #     percent = [60, 20, 10, 10]
     color = colors[0:len(labels)]
@@ -32,7 +32,7 @@ def draw_circle(labels, percents, title):
     plt.legend()
     if os.path.exists(prefix) == False:
         os.makedirs(prefix)
-    plt.savefig(prefix + title + '.png')
+    plt.savefig(prefix + title + '.png', dpi=240)
 #     plt.show()
     plt.close()
 #     with open(fileName, 'wb') as f:
@@ -40,12 +40,12 @@ def draw_circle(labels, percents, title):
 #     plt.show()
 
 def draw_bar(labels, percents, xname, yname, title):
-    plt.figure(figsize=(20, 25)) 
+    plt.figure(figsize=(8.0, 6.0)) 
     n_groups = len(labels)
     fig, ax = plt.subplots()  
     index = np.arange(n_groups)  
 #     index=1
-    bar_width = 0.5   
+    bar_width = 0.6
     opacity = 0.8
     color = colors[0:len(labels)]
     rects1 = plt.bar(index, percents, bar_width,alpha=opacity, color=color,label=labels[0])    
@@ -54,12 +54,21 @@ def draw_bar(labels, percents, xname, yname, title):
     plt.title(title)  
     plt.xticks(index + bar_width / 2, labels)  
 #     plt.ylim(0,40) 
-    
+    def autolabel(rects):
+    # attach some text labels
+        for rect in rects:
+            height = rect.get_height()
+            ax.text(rect.get_x()+rect.get_width()/2.0, 1.05*height, 
+                '%d'%int(height), ha='center', va='bottom')
+    autolabel(rects1)
+    for label in ax.xaxis.get_ticklabels():
+        label.set_fontsize(6)
+
     plt.legend()     
     plt.tight_layout()
     if os.path.exists(prefix) == False:
         os.makedirs(prefix)
-    plt.savefig(prefix + title + '.png')  
+    plt.savefig(prefix + title + '.png', dpi=240)  
 #     plt.show() 
 if __name__ == '__main__':
     draw_circle(['北京', '上海', '深圳'], [60, 20, 10], 'demo1.png')

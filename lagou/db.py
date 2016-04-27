@@ -57,16 +57,26 @@ class MysqlDb:
         return cursor
     def query_group_count(self, field, condDict=None):
         sql = 'select ' + field + ', count(*) as cnt from '
-        sql += self._table
+        sql += self._table + ' where '
         if condDict != None:
-            sql += ' where '
+#             sql += ' where '
             for key in condDict:
+                if key == 'GT':
+                    sql += condDict[key]['field'] + '>=' + str(condDict[key]['value']) + ' and '
+                    continue
+                if key == 'LT':
+                    sql += condDict[key]['field'] + '<=' + str(condDict[key]['value']) + ' and '
+                    continue
+                if key == 'LIKE':
+                    sql += condDict[key]['field'] + ' like "%' + str(condDict[key]['value']) + '%" and '
+                    continue
                 if isinstance(condDict[key], str):
                     sql += key + ' = "' + str(condDict[key]) + '" and '
                 else:
                     sql += key + ' = ' + str(condDict[key]) + ' and '
-            sql += ' 1 '
-        sql += ' group by ' + field + ' order by cnt desc'
+        
+        sql += ' 1 '
+        sql += ' group by ' + field + ' order by cnt desc limit 0,10'
         print(sql)
         cursor = self._conn.cursor()
         cursor.execute(sql)
