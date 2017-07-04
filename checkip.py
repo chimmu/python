@@ -48,4 +48,3 @@ def checkip():
         else:
             print("same ip do nothing")
 checkip()
-# sendmail('18650423425')
